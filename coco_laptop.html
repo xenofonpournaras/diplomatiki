@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="filesaver.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"> </script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<style>
+        .container {
+                padding-right: 2px;
+                padding-left: 2px;
+                margin-right: 4px;
+                margin-left: 4px;;
+                }
+</style>
+</head>
+<body>
+        
+        <hr>
+        <div class="p-3 mb-2 bg-dark text-white"> <center> <h3>Use COCO model for object Detection</h3></center></div>
+
+
+
+        
+        <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+        <div class="row">
+          
+            <div class="col-sm-2">Select usage:
+            </div>
+        <div class="col-sm-3">
+            <p class="lead">Live video detection</p>
+            
+            <input type="radio" id="Lv" name="Dol" onclick="func1()" />
+        </hr> <br/><br/>
+        
+        <button onclick="myStopFunction()">Stop Live detection</button>
+        </div>  
+        <div class="col-sm-2">
+        </div>
+        
+        <div class="col-sm-3">
+                <p class="lead">Snapshot</p>
+                <input type="radio" id="Snp" name="Dol" onclick="func1()" /> 
+                
+        </div>
+        <div class="col-sm-2"> <input type="file" id="fileinput" accept = "image/*" >
+
+        </div>
+        </div>
+        </div> 
+        
+
+        <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+        <div class="row">
+                        <div class="col-sm-7">
+                                <div class="video-wrap">
+                                        <video id="video" playsinline autoplay></video>
+                                </div> 
+                                <br>
+                                <div class="controller">
+                                        <center>
+                                        <button type="button" class="btn btn-primary" id="snap" style="display:none;" >Press here to capture picture</button>
+                                        </center>
+                                </div>
+                        </div>
+                        <hr>
+                        <div class="col-sm-5">
+                                <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+                                <hr>
+                                <center><button type="button" class="btn btn-primary" id="snap1" style="display:none;">Start detection</button></center>
+                        </div>
+        </div>
+        </div>
+        </div>
+        <center><button type="button" class="btn btn-primary" id="save-btn">Save snapshot or image </button></center>
+        <p id="demo" style="display:none;"></p>
+        <p id="demo1" style="display:none;"></p>
+
+  <script>
+'use strict';
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const snap = document.getElementById('snap');
+const errorMsgElement = document.getElementById('spanErrorMsg');
+var timer = null;
+var timer1=null;
+var timer2=null;
+var timer3=null;
+var timer4=null;
+
+
+var k=0;
+var array=[];
+var myarray=[];
+var result={};
+const constraints= {
+	audio: false,
+	video:{
+        width: 1280, height: 720
+    }
+};
+
+function myStopFunction() {
+  clearInterval(timer);
+  clearInterval(timer1);
+  clearInterval(timer2);
+  clearInterval(timer3);
+  clearInterval(timer4);
+
+
+  canvas.style.display="none";
+}
+
+function func1()
+{
+    var type= document.getElementsByName("Dol");
+    if (type[0].checked) {
+        Lv();
+        
+    }
+    else if (type[1].checked) {
+        Snp();
+        
+    }
+}
+
+function Lv() {
+    document.getElementById('snap').style.display = "none";
+    document.getElementById('snap').style.visibility = "hidden";
+    document.getElementById('snap1').style.display = "none";
+    document.getElementById('snap1').style.visibility = "hidden";
+   async function init(){
+       try{
+           const stream = await navigator.mediaDevices.getUserMedia(constraints);
+           handleSuccess (stream);
+       }
+       catch(e){
+           errorMsgElement.innerHTML = 'navigator.getUserMedia.error:${e.toString()}';
+       }
+      timer4= setInterval(() => {
+           ctx.drawImage(video,0,0,640,480);
+       }, 16);
+       //var i;
+   
+
+timer3 = cocoSsd.load().then(model => {
+    timer1= setInterval(() => {
+     timer2=  model.detect(canvas).then(predictions => {
+           for (var i = 0; i < predictions.length; i++) {
+             var antik = predictions[i]
+             var plaisio = antik.bbox    
+             Tetragwno(plaisio[0], plaisio[1], plaisio[2], plaisio[3])
+             Katigoria(antik["class"] +  " : " + parseInt(antik["score"] * 100 ,10) + "%", plaisio[0], plaisio[1])
+         }
+         console.log('Predictions: ', predictions);
+       });
+       
+   }, 50); 
+     }); 
+        
+   }
+   
+   function handleSuccess(stream){
+       window.stream = stream;
+       video.srcObject = stream;
+   }
+   
+ init();
+   
+   function Tetragwno(x, y, width, height) {
+     var ctx = canvas.getContext('2d');
+     ctx.beginPath();
+     ctx.rect(parseInt(x, 10), parseInt(y, 10), parseInt(width, 10), parseInt(height, 10))
+     ctx.strokeStyle = "blue"
+     ctx.lineWidth = 1.5
+     ctx.stroke()
+     ctx.closePath()
+   }
+   
+   function Katigoria(kat, x, y) {
+     var ctx = canvas.getContext('2d')
+     ctx.beginPath()
+     ctx.rect(x -6, y-20, 130, 20)
+     ctx.fillStyle = "red" 
+     ctx.fill()
+     ctx.closePath()
+     ctx.beginPath()
+     ctx.font = "18px Arial"
+     ctx.fillStyle = "blue" 
+     ctx.fillText(kat, parseInt(x, 10), parseInt(y, 10))
+     ctx.closePath()
+   } 
+   
+   }
+
+
+function Snp() {
+    document.getElementById('save-btn').style.display ='block';
+    document.getElementById('save-btn').style.visibility = "visible";
+    document.getElementById('snap1').style.display="none";
+    document.getElementById('snap').style.display = "block";
+    document.getElementById('snap').style.visibility = "visible";
+    canvas.style.display = "block";
+    canvas.style.visibility = "visible";
+    ctx.clearRect(0,0,640,480);
+
+    async function init(){
+	try{
+		const stream = await navigator.mediaDevices.getUserMedia(constraints);
+		handleSuccess (stream);
+	}
+	catch(e){
+		errorMsgElement.innerHTML = 'navigator.getUserMedia.error:${e.toString()}';
+	}
+}
+function handleSuccess(stream){
+	window.stream = stream;
+	video.srcObject = stream;
+}
+
+init();
+
+var context = canvas.getContext('2d');
+
+snap.addEventListener("click",function(){
+	context.drawImage(video,0,0,640,480); 
+});
+
+
+const photo = document.getElementById('canvas');
+document.getElementById("snap").onclick = function() {myFunction()};
+
+function myFunction() {
+
+  cocoSsd.load().then(model => {
+	model.detect(canvas).then(predictions => {
+        console.time("dcode")
+		for (var i = 0; i < predictions.length; i++) {
+			var antik = predictions[i]
+            var plaisio = antik.bbox
+            console.log(JSON.stringify(antik));
+            // meta na to vgalw 
+            var photos= {
+                photo: k
+            }
+
+            var final_obj = extend(photos,antik);
+            var data= JSON.stringify(final_obj)
+            document.getElementById("demo").innerHTML = data;
+            //k = k+1
+            console.log(data);
+            myarray.push(data);  
+
+
+			Tetragwno(plaisio[0], plaisio[1], plaisio[2], plaisio[3])
+			Katigoria(antik["class"] + " : " + parseInt(antik["score"] * 100 ,10) +"%", plaisio[0], plaisio[1])
+        }
+        console.timeEnd("dcode")
+        k=k+1
+	});     
+});
+
+
+function Tetragwno(x, y, width, height) {
+	var ctx = canvas.getContext('2d');
+	ctx.beginPath();
+	ctx.rect(parseInt(x, 10), parseInt(y, 10), parseInt(width, 10), parseInt(height, 10))
+	ctx.strokeStyle = "blue"
+	ctx.lineWidth = 0.9
+	ctx.stroke()
+	ctx.closePath()
+}
+
+function Katigoria(kat, x, y) {
+	var ctx = canvas.getContext('2d')
+	ctx.beginPath()
+	ctx.rect(x -8, y-20, 130, 20)
+	ctx.fillStyle = "red"
+	ctx.fill()
+	ctx.closePath()
+	ctx.beginPath()
+	ctx.font = "18px Arial"
+	ctx.fillStyle = "blue" 
+	ctx.fillText(kat, parseInt(x, 10), parseInt(y, 10))
+	ctx.closePath()
+} 
+}
+}
+
+
+
+const snap1 = document.getElementById('snap1');
+let fileInput = document.getElementById('fileinput');
+fileInput.addEventListener('change', function(ev) {
+    canvas.style.display = "block";
+    canvas.style.visibility = "visible";
+   if(ev.target.files) {
+      let file = ev.target.files[0]; //prwto file
+      var reader  = new FileReader(); // exw tin eikona se morfi file 
+      reader.readAsDataURL(file); //metatropi se dataurl gia na bei se morfi eikonas
+      reader.onloadend = function (e) { //otan teleiwsi i metatropi se dataurl
+          var image = new Image(); // dhmiourgia image object
+          image.src = e.target.result; //pigi eikonas
+          image.onload = function(ev) { //molis ginei load i eikona ksekinaei i zwgrafiki
+             var canvas = document.getElementById('canvas');
+             var ctx = canvas.getContext('2d');
+             ctx.drawImage(image,0,0, 640, 480);
+         }
+         document.getElementById('save-btn').style.display ='block';
+         document.getElementById('save-btn').style.visibility = "visible";
+
+        document.getElementById('snap1').style.display = "block";
+        document.getElementById('snap1').style.visibility = "visible";
+        document.getElementById("snap1").onclick = function() {det()};
+        }
+    }
+});
+
+function det() {
+
+cocoSsd.load().then(model => {
+  model.detect(canvas).then(predictions => {
+      for (var i = 0; i < predictions.length; i++) {
+          var antik = predictions[i]
+          var plaisio = antik.bbox
+
+          var photos= {
+                photo: k
+            }
+
+            var final_obj = extend(photos,antik);
+            var data= JSON.stringify(final_obj)
+          
+            document.getElementById("demo").innerHTML = data;
+            //k=k+1
+            myarray.push(data);
+            console.log(myarray)  
+
+
+          Tetragwno(plaisio[0], plaisio[1], plaisio[2], plaisio[3])
+          Katigoria(antik["class"] + " : " +  parseInt(antik["score"] * 100 ,10) + "%", plaisio[0], plaisio[1])
+      }
+      k=k+1;
+      /*var photos= {
+                photo: k+1
+            }
+           
+            for (var i = 0; i < myarray.length; i++) {
+                result[myarray[i].key] = myarray[i].value;
+            }
+            console.log(result)
+                   
+            var final_obj = extend(photos,result);
+            var data1= JSON.stringify(final_obj);
+          
+            document.getElementById("demo1").innerHTML = data1;
+            myarray.push(data1);
+            k=k+1 */       
+  });
+});
+}
+
+function Tetragwno(x, y, width, height) {
+  var ctx = canvas.getContext('2d');
+  ctx.beginPath();
+  ctx.rect( parseInt(x, 10), parseInt(y, 10), parseInt(width, 10), parseInt(height, 10))
+  ctx.strokeStyle = "blue"
+  ctx.lineWidth = 0.9
+  ctx.stroke()
+  ctx.closePath()
+}
+
+function Katigoria(kat, x, y) {
+  var ctx = canvas.getContext('2d')
+  
+  ctx.beginPath()
+  ctx.rect(x -6, y-20, 130, 20)
+  ctx.fillStyle = "red" 
+  ctx.fill()
+  ctx.closePath()
+  ctx.beginPath()
+  ctx.font = "18px Arial"
+  ctx.fillStyle = "blue"
+  ctx.fillText(kat, parseInt(x, 10), parseInt(y, 10))
+  ctx.closePath()
+} 
+
+
+function extend(obj, src) {
+    for (var key in src) {
+        if (src.hasOwnProperty(key)) obj[key] = src[key];
+    }
+    return obj;
+}
+
+$("#save-btn").click(function() {  
+            var blob = new Blob([myarray], {type: "text/plain;charset=utf-8"});
+            saveAs(blob, "testfile1.txt");
+            });
+
+
+  </script>
+
+</body>
+</html>
