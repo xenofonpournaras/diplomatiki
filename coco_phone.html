@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+        <head>
+                <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"> </script>
+                <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"> </script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/101/three.min.js"></script>
+                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+                <meta charset="utf-8"/>
+            <style>
+                .jumbotron{
+                    margin-top: 80px;
+                }
+            </style>
+        </head>
+
+    <body  style="background-color:rgb(232, 210, 245);" >
+        <hr>
+        <hr>
+        <div class="p-3 mb-2 bg-dark text-white"><center><h3> <b>Grab and image or a video and detect objects!</b></h3></center></div>
+        <div class="jumbotron ">
+            <div class="container">
+            <div class="row">
+            <h4> <b>Take a picure or insert a photo:</b></h4>
+                <div class="col-sm-5"> <input type="file" id="fileinput" accept = "image/*"> </div>                          
+            </div>
+            <hr>
+            <div class="row">
+           <h4> <b> Use video detection:</b> </h4>  <div class="col-sm-5"> <input type="file" id="capture" accept="video/*"></div>  
+            </div>       
+        </div>
+    </div>
+    
+   <center><video src="" id="video" width="520" height="640" controls style="display:none;"></video></center> 
+    <div class="jumbotron jumbotron-fluid">
+       <div class="row">
+        <div class="col-sm-2"></div>
+          <center> <canvas id= "canvas" width="520" height="640" style="display:none;"></canvas></canvas></center> 
+        </div>
+        <hr>
+        <center>
+            <button type="button" class="btn btn-primary" id="snap" style="height:100px; width:200px"><h3>Start Detection</h3></button> 
+         </center>
+        </div>
+        <hr>
+
+   <script>
+
+let fileInput = document.getElementById('fileinput');
+fileInput.addEventListener('change', function(ev) {
+   if(ev.target.files) {
+    canvas.style.display = "block";
+    canvas.style.visibility = "visible";
+      let file = ev.target.files[0]; //prwto file
+      var reader  = new FileReader(); // exw tin eikona se morfi file 
+      reader.readAsDataURL(file); //metatropi se dataurl gia na bei se morfi eikonas
+      reader.onloadend = function (e) { //otan teleiwsi i metatropi se dataurl
+          var image = new Image(); // dhmiourgia image object
+          image.src = e.target.result; //pigi eikonas
+          image.onload = function(ev) { //molis ginei load i eikona ksekinaei i zwgrafiki
+             var canvas = document.getElementById('canvas');
+             //canvas.width = image.width;
+             //canvas.height = image.height;
+             canvas.width = 640;
+             canvas.height = 720;
+             var ctx = canvas.getContext('2d');
+             ctx.drawImage(image,20,20, 640,720);
+         }
+      }
+   }
+});
+
+//const photo = document.getElementById('canvas');
+document.getElementById("snap").onclick = function() {myFunction()};
+
+function myFunction() {
+
+  cocoSsd.load().then(model => {
+  
+	model.detect(canvas).then(predictions => {
+		for (var i = 0; i < predictions.length; i++) {
+			var antik = predictions[i]
+			var plaisio = antik.bbox
+			Tetragwno(plaisio[0], plaisio[1], plaisio[2], plaisio[3])
+			Katigoria(antik["class"] + " : " + parseInt(antik["score"] * 100 ,10) +"%",plaisio[0],plaisio[1])
+		}
+	});
+});
+
+
+function Tetragwno(x, y, width, height) {
+	var ctx = canvas.getContext('2d');
+	ctx.beginPath();
+	ctx.rect(parseInt(x, 10), parseInt(y, 10), parseInt(width, 10), parseInt(height, 10))
+	ctx.strokeStyle = "blue"
+	ctx.lineWidth = 1.2
+	ctx.stroke()
+	ctx.closePath()
+}
+
+function Katigoria(kat, x, y) {
+	var ctx = canvas.getContext('2d')
+	ctx.beginPath()
+	ctx.rect(x -6, y-20, 130, 20)
+	ctx.fillStyle = "red"
+	ctx.fill()
+	ctx.closePath()
+	ctx.beginPath()
+	ctx.font = "18px Arial"
+	ctx.fillStyle = "blue"
+	ctx.fillText(kat, parseInt(x, 10), parseInt(y, 10))
+	ctx.closePath()
+} 
+}
+
+
+document.addEventListener('DOMContentLoaded', (ev)=>{
+            let input = document.getElementById('capture');  
+            input.addEventListener('change', (ev)=>{
+                console.dir( input.files[0] );
+                if(input.files[0].type.indexOf("video/") > -1 ){
+                    let video = document.getElementById('video');
+                    video.src=window.URL.createObjectURL(input.files[0]);
+
+                }               
+})
+})
+
+
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+var video = document.getElementById('video');
+canvas.width = 520;
+canvas.height = 640;
+
+
+
+video.addEventListener('loadedmetadata', function() {
+    video.style.display = "block";
+    video.style.visibility = "visible";
+    canvas.style.display = "block";
+    canvas.style.visibility = "visible";
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  //video.videoWidth = canvas.width;
+  //video.videoHeight = canvas.height;
+});
+
+video.addEventListener('play', function() {
+  var $this = this; //cacharw
+  (function loop() {
+    if (!$this.paused && !$this.ended) {
+      //ctx.drawImage($this, 0, 0);
+      //setTimeout(loop, 1000 / 20); /
+
+     cocoSsd.load().then(model => {
+        setInterval(() => {
+       ctx.drawImage($this, 0, 0);
+      setTimeout(loop, 1000 / 20); // 20fps
+     model.detect(canvas).then(predictions => {
+      for (var i = 0; i < predictions.length; i++) {
+          var antik = predictions[i]
+          var plaisio = antik.bbox
+          Tetragwno(plaisio[0], plaisio[1], plaisio[2], plaisio[3])
+          Katigoria(antik["class"] + " : " + parseInt(antik["score"] * 100 ,10) +"%",plaisio[0],plaisio[1])
+      }
+  });
+}, 50);
+});
+    }
+  })();
+
+}, 150);
+
+
+function Tetragwno(x, y, width, height) {
+  var ctx = canvas.getContext('2d');
+  ctx.beginPath();
+  ctx.rect(parseInt(x, 10),  parseInt(y, 10), parseInt(width, 10), parseInt(height, 10))
+  ctx.strokeStyle = "blue"
+  ctx.lineWidth = 1.2
+  ctx.stroke()
+  ctx.closePath()
+}
+
+function Katigoria(kat, x, y) {
+  var ctx = canvas.getContext('2d')
+  ctx.beginPath()
+  ctx.rect(x -6, y-20, 130, 20)
+  ctx.fillStyle = "red" 
+  ctx.fill()
+  ctx.closePath()
+  ctx.beginPath()
+  ctx.font = "18px Arial"
+  ctx.fillStyle = "blue"
+  ctx.fillText(kat, parseInt(x, 10), parseInt(y, 10))
+  ctx.closePath()
+} 
+
+</script>
+
+
+</body>
+</html>
