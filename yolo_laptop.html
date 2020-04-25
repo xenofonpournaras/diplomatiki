@@ -1,0 +1,433 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="filesaver.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
+
+          <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <title>YOLO Object Detection</title>
+    </head>
+    
+    <body>
+      <div class="p-3 mb-2 bg-dark text-white"> <center> <h3>Object detection with YOLO</h3></center></div>
+        
+      <div class="jumbotron jumbotron-fluid">
+        <div class="container">
+        <div class="row">
+            <div class="col-sm-2">Select usage:
+            </div>
+        <div class="col-sm-3">
+            <p class="lead">Live video detection</p>
+            
+            <input type="radio" id="Lv" name="Lv" onclick="Lv()" />
+          </hr> <br/><br/>
+            <button onclick="myStopFunction()">Stop Live detection</button>
+        </div>  
+        <div class="col-sm-2">
+        </div>
+        
+        <div class="col-sm-3">
+                <p class="lead">Snapshot</p>
+                <input type="radio" id="Snp" name="Lv" onclick="Snp()" />
+        </div>
+        <div class="col-sm-2">  <input type="file" id="capture"  accept = "image/*" capture  /> 
+
+        </div>
+        </div>
+        </div>
+
+
+      
+      <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+            <div class="row">
+                            <div class="col-sm-7">
+                                    <div class="video-wrap">
+                                            <video id="video" playsinline autoplay></video>
+                                    </div> 
+                                    <br>
+                                    <div class="controller">
+                                            <center>
+                                            <button type="button" class="btn btn-primary" id="snap" style="display:none;" >Press here to capture picture</button>
+                                            </center>
+                                    </div>
+                            </div>
+                        
+                            <div class="col-sm-5">
+                            
+                                    <canvas id="canvas" width="640" height="480"><img src="" id="imgconv" width="640" height="480" style="display:none;" ></canvas>
+                                     
+                                    <hr>
+                                    <div class="controller">
+                                      <center>
+                                      <button type="button" class="btn btn-primary" id="snap1" style="display:none;">Detect</button>
+                                      </center>
+                              </div>
+                                    
+                            </div>
+            </div>
+            </div>
+            </div>
+            <center>Press this button if you want to save data </center>
+        <br/><center><button type="button" class="btn btn-primary" id="save-btn">Save</button></center>
+        <p id="demo" style="display:none;"></p>
+    
+<script>
+
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const snap = document.getElementById('snap');
+var myarray=[];
+
+
+
+let objects = [];
+
+
+const errorMsgElement = document.getElementById('spanErrorMsg');
+const constraints= {
+	audio: false,
+	video:{
+		width: 1280, height: 720
+	}
+};
+
+function myStopFunction() {
+  canvas.style.display="none";
+}
+
+function Lv() {
+  document.getElementById('snap').style.display = "none";
+  document.getElementById('snap1').style.display = "none";
+async function init(){
+	try{
+		const stream = await navigator.mediaDevices.getUserMedia(constraints);
+		handleSuccess (stream);
+        /* setInterval(() => {
+        ctx.drawImage(video,0,0,640,480);
+    }, 16);  */
+    
+    yolo = await ml5.YOLO(video, startDetecting)
+	}
+	catch(e){
+		errorMsgElement.innerHTML = 'navigator.getUserMedia.error:${e.toString()}';
+	}
+}
+
+function handleSuccess(stream){
+	window.stream = stream;
+	video.srcObject = stream;
+}
+
+init();
+
+
+function startDetecting(){
+ 
+  console.log('model ready')
+  //console.time("dcode")
+  detect();
+}
+
+
+function detect() {
+  yolo.detect(function(err, res) {
+    
+    if(err){
+      console.log(err);
+      return
+    }
+    obj = res;
+    //console.time("dcode")
+    console.log(objects);
+   if(obj){
+      rect_draw();
+      label_draw()
+     // console.timeEnd("dcode")
+    } 
+    detect();
+  });
+}
+
+function label_draw(){
+    for (let i = 0; i < obj.length; i++) {
+    ctx.font = "18px Arial";
+      ctx.fillStyle = "green";
+      ctx.fillText(obj[i].label, obj[i].x * 640 + 3, obj[i].y * 480 + 17); 
+    }
+}
+
+function rect_draw(){
+    
+    ctx.fillStyle = "#000000"
+    ctx.fillRect(0,0, 640, 480);
+    ctx.drawImage(video, 0, 0);
+    for (let i = 0; i < obj.length; i++) {
+      ctx.beginPath();
+      ctx.rect(obj[i].x * 640, obj[i].y * 480, obj[i].w * 640, obj[i].h * 480);
+      ctx.strokeStyle = "green";
+      ctx.stroke();
+      ctx.closePath();
+    }
+}
+
+
+}
+
+
+function Snp() {
+    document.getElementById('snap').style.display = "block";
+    document.getElementById('snap').style.visibility = "visible";
+    document.getElementById('canvas').style.display = "block";
+    document.getElementById('canvas').style.visibility = "visible";
+    async function init(){
+	try{
+		const stream = await navigator.mediaDevices.getUserMedia(constraints);
+		handleSuccess (stream);
+	}
+	catch(e){
+		errorMsgElement.innerHTML = 'navigator.getUserMedia.error:${e.toString()}';
+	}
+}
+function handleSuccess(stream){
+	window.stream = stream;
+	video.srcObject = stream;
+}
+
+init();
+
+async function do_model(){
+  options= { filterBoxesThreshold: 0.01, IOUThreshold: 0.3, classProbThreshold: 0.3 };
+  yolo = await ml5.YOLO(options, startDetecting);
+}
+
+function startDetecting(){
+  console.log('model ready')
+};
+
+var context = canvas.getContext('2d');
+const snap1 = document.getElementById('snap1');
+const imgconv = document.querySelector("#imgconv");
+
+// GIA NA CAPTURE PICTURE KAI NA EMFANISW IMAGE STON CANVA
+snap.addEventListener("click",function(){
+context.drawImage(video,0,0,640,480); // width height
+  document.getElementById('snap1').style.display = "block";
+  document.getElementById('snap1').style.visibility = "visible";
+  imgconv.style.display="block";
+  imgconv.style.display="visible";
+
+  const dataURI = canvas.toDataURL();
+  console.log(dataURI);
+  imgconv.src = dataURI;
+  do_model();
+});
+
+
+//GIA TO DETECT
+snap1.addEventListener("click",function(){
+//console.time("dcode")
+    yolo.detect(imgconv, function(err, res) {
+     // console.time('dcode')
+    if(err){
+      console.log(err);
+      return
+    }
+    obj = res;
+    console.log(obj);
+    //console.timeEnd('dcode');
+    if(obj){
+      rect_draw();
+      label_draw();
+     // console.timeEnd('dcode');
+    }
+    
+  });
+
+});
+
+function rect_draw(){
+    ctx.fillStyle = "#000000"
+    ctx.fillRect(0,0, 640, 480);
+    ctx.drawImage(imgconv, 0, 0);
+    for (let i = 0; i < obj.length; i++) {
+      ctx.beginPath();
+      ctx.rect(obj[i].x * 640, obj[i].y * 480, obj[i].w * 640, obj[i].h * 480);
+      ctx.strokeStyle = "blue";
+      ctx.stroke();
+      ctx.closePath();
+    }
+}
+
+function label_draw(){
+    for (let i = 0; i < obj.length; i++) {
+    ctx.font = "18px Arial";
+      ctx.fillStyle = "red";
+     // ctx.fillText(obj[i].label, obj[i].x * 640 + 3, obj[i].y * 480 + 17); 
+      ctx.fillText(obj[i].label, obj[i].x * 640 + 3, obj[i].y * 480 + 17); 
+      ctx.fillText(Math.round(obj[i].confidence * 100) + "%",obj[i].x * 640 + 2, obj[i].y * 480 + 33 );
+    }
+}
+
+
+
+
+}
+
+
+var capture = document.getElementById("capture");
+
+
+const imgconv = document.getElementById("imgconv");
+const snap1 = document.getElementById('snap1');
+
+yolo = ml5.YOLO(modelReady);
+async function do_model(){
+  options= { filterBoxesThreshold: 0.01, IOUThreshold: 0.4, classProbThreshold: 0.3};
+  yolo = await ml5.YOLO(options, startDetecting);
+}
+
+function startDetecting(){
+  console.log('model ready')
+};
+
+document.addEventListener('DOMContentLoaded', (ev)=>{
+
+  
+    let input = document.getElementById('capture');
+    input.addEventListener('change', (ev)=>{
+                console.dir( input.files[0] );
+                document.getElementById('snap1').style.display = "block";
+                document.getElementById('snap1').style.visibility = "visible";
+                document.getElementById('canvas').style.display = "block";
+                document.getElementById('canvas').style.visibility = "visible";
+                imgconv.style.display="block";
+                imgconv.style.display="visible";
+                if(input.files[0].type.indexOf("image/") > -1){
+                    let imgconv = document.getElementById('imgconv');
+                    imgconv.src = window.URL.createObjectURL(input.files[0]);
+                    ctx.drawImage(imgconv, 0, 0,640,480);
+                    do_model();
+                }
+            });
+});
+
+function modelReady() {
+  console.log("model Ready!")
+}
+
+
+
+snap1.addEventListener("click",function(){
+ // console.time('dcode');
+  yolo.detect(imgconv, function(err, res) {
+    if(err){
+      console.log(err);
+      return
+    }
+    obj = res;
+
+    if(obj){
+      rect_draw();
+      label_draw();
+      //console.timeEnd('dcode');
+    }
+  });
+});
+
+function label_draw(){
+    for (let i = 0; i < obj.length; i++) {
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "red";
+      ctx.fillText(obj[i].label, obj[i].x * 640 + 3, obj[i].y * 480 + 17); 
+      ctx.fillText(Math.round(obj[i].confidence * 100) + "%",obj[i].x * 640 + 2, obj[i].y * 480 + 33 );
+    }
+}
+
+function rect_draw(){
+    
+    ctx.fillStyle = "#000000"
+    ctx.fillRect(0,0, 640, 480);
+    console.log(obj.length);
+    ctx.drawImage(imgconv, 0, 0,640,480);
+    for (let i = 0; i < obj.length; i++) {
+            
+    var photos= {
+        photo: imgconv.src
+    }
+
+    var final_obj= extend(photos, obj);
+   // document.getElementById("demo").innerHTML = data;
+    var data= JSON.stringify(final_obj);
+   
+      //myarray.push(data);
+      ctx.beginPath();
+      ctx.rect(obj[i].x * 640, obj[i].y * 480, obj[i].w * 640, obj[i].h * 480);
+      ctx.strokeStyle = "green";
+      ctx.stroke();
+      ctx.closePath();
+    }
+    myarray.push(data);
+
+}
+
+
+
+/*
+function draw(){
+   // ctx = canvas.getContext('2d');
+    //ctx.drawImage(img, 0, 0);
+
+    ctx.fillStyle = "#000000"
+    ctx.fillRect(0,0, 640, 480);
+    console.log(objects.length);
+    ctx.drawImage(imgconv, 0, 0,640,480);
+    for (let i = 0; i < objects.length; i++) {
+            
+    var photos= {
+        photo: imgconv.src
+    }
+
+    var final_obj= extend(photos, objects);
+   // document.getElementById("demo").innerHTML = data;
+    var data= JSON.stringify(final_obj);
+   
+      //myarray.push(data);
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "red";
+      ctx.fillText(objects[i].label, objects[i].x * 640 + 4, objects[i].y * 480 + 16); 
+      ctx.fillText(Math.round(objects[i].confidence * 100) + "%",objects[i].x * 640 + 2, objects[i].y * 480 + 33 );
+
+      ctx.beginPath();
+      ctx.rect(objects[i].x * 640, objects[i].y * 480, objects[i].w * 640, objects[i].h * 480);
+      ctx.strokeStyle = "green";
+      ctx.stroke();
+      ctx.closePath();
+    }
+    myarray.push(data);
+} */
+
+function extend(obj, src) {
+    for (var key in src) {
+        if (src.hasOwnProperty(key)) obj[key] = src[key];
+    }
+    return obj;
+}
+
+$("#save-btn").click(function() {
+            var blob = new Blob([myarray], {type: "text/plain;charset=utf-8"});
+            saveAs(blob, "testfile1.txt");
+            });
+
+
+</script>
+    
+    </body>
+    
+    </html>
+
