@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+        <head>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/101/three.min.js"></script>
+                <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+                <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
+                <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+                <meta charset="utf-8"/>
+                <title>YOLO Object Detection</title>
+
+        </head>
+    <body style="background-color:rgb(232, 210, 245);">
+        <hr>
+        <hr>
+        <div class="p-3 mb-2 bg-dark text-white"> <center> <h3>Use Yolo Object Detection </h3></center></div>
+
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+            <div class="row">
+              <div class="col-sm">
+                <h3>Take picture</h3>  <input type="file" id="capture" accept = "image/*" capture/> 
+              </div>
+             
+              <div class="col-sm">
+                 <h3> Use video detection </h3>  <input type="file" id="capture1" accept="video/*">  
+              </div>
+          </div> 
+          </div>
+        </div>
+
+        <hr>
+        
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+            <div class="row">
+                <div class="col-sm">
+                    <img src="" id="img" width="580" height="640" style="display:none;" />
+                </div>
+                <div class="col-sm">
+                    <center><video src="" id="video" width="520" height="640" controls style="display:none;"></video></center>  
+                </div>
+            </div>
+            </div>
+        
+               
+        
+        <hr>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-sm">
+                    <canvas id= "canvas" width="580" height="640" style="display:none;"> </canvas> 
+                </div>
+                <div class="col-sm">
+                    <canvas id= "canvas1" width="520" height="640" style="display:none;"> </canvas> 
+                </div>
+            </div>
+            </div>
+            </div>
+
+        <hr>
+        <center>
+            <button type="button" class="btn btn-primary" id="snap" style="height:100px; width:200px"><h3>Start Detection</h3></button>
+        </center>
+<hr>
+
+
+</div>
+<script>
+'use strict';
+const canvas = document.getElementById('canvas');
+const snap = document.getElementById('snap');
+var ctx ;
+let obj = [];
+const img = document.getElementById("img");
+
+
+
+var options= { filterBoxesThreshold: 0.01, IOUThreshold: 0.35, classProbThreshold: 0.35 };
+var yolo = ml5.YOLO(options,modelReady);
+
+
+
+document.addEventListener('DOMContentLoaded', (ev)=>{
+    let input = document.getElementById('capture');
+    input.addEventListener('change', (ev)=>{
+                console.dir( input.files[0] );
+                if(input.files[0].type.indexOf("image/") > -1){
+                    let img = document.getElementById('img');
+                    img.src = window.URL.createObjectURL(input.files[0]);
+                    video.style.display = "none";
+                    video.style.visibility = "hidden";
+                    canvas1.style.display = "none";
+                    canvas1.style.visibility = "hidden";
+                    canvas.style.display = "block";
+                    canvas.style.visibility = "visible";
+                    img.style.display = "block";
+                    img.style.visibility = "visible";
+                }
+            });
+});
+
+
+function modelReady() {
+  console.log("model Ready!")
+} 
+
+
+
+snap.addEventListener("click",function(){
+
+  yolo.detect(img, function(err, res) {
+    if(err){
+      console.log(err);
+      return
+    }
+    obj = res;
+    //console.log(obj)
+    
+    if(obj){
+      rect_draw();
+      label_draw();
+    }
+  });
+});
+
+function label_draw(){
+    for (let i = 0; i < obj.length; i++) {
+      //console.log("ooooo")
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "red";
+      ctx.fillText(obj[i].label, obj[i].x * 580 + 4, obj[i].y * 640 + 16); 
+      ctx.fillText(Math.round(obj[i].confidence * 100) + "%",obj[i].x * 580 + 2, obj[i].y * 640 + 33 );
+    }
+
+
+}
+
+
+function rect_draw(){
+    ctx = canvas.getContext('2d');
+    //ctx.drawImage(img, 0, 0);
+    ctx.fillStyle = "#000000"
+    ctx.fillRect(0,0, 580, 640);
+    console.log(obj.length);
+    ctx.drawImage(img, 0, 0,580,640);
+    for (let i = 0; i < obj.length; i++) {
+      //console.log("ooooo")
+      ctx.beginPath();
+      ctx.rect(obj[i].x * 580, obj[i].y * 640, obj[i].w * 580, obj[i].h * 640);
+      ctx.strokeStyle = "green";
+      ctx.stroke();
+      ctx.closePath();
+    }
+}
+//////////////// VIDEO ////////////////////////
+
+var canvas1 = document.getElementById('canvas1');
+var ctx1 = canvas1.getContext('2d');
+canvas1.width = 520;
+canvas1.height = 640;
+var video = document.getElementById('video');
+
+document.addEventListener('DOMContentLoaded', (ev)=>{
+            let input1 = document.getElementById('capture1');  
+            input1.addEventListener('change', (ev)=>{
+                console.dir( input1.files[0] );
+                if(input1.files[0].type.indexOf("video/") > -1 ){
+                    let video = document.getElementById('video');
+                    video.src=window.URL.createObjectURL(input1.files[0]);
+
+                }               
+})
+});
+
+video.addEventListener('loadedmetadata', function() {
+img.style.display = "none";
+img.style.visibility = "hidden";
+canvas.style.display = "none";
+canvas.style.visibility = "hidden";
+
+video.style.display = "block";
+video.style.visibility = "visible";
+canvas1.style.display = "block";
+canvas1.style.visibility = "visible";
+canvas1.width = video.videoWidth;
+canvas1.height = video.videoHeight;
+});
+
+
+video.addEventListener('play', function() {
+  var $this = this; //cacharw
+  (function loop() {
+    if (!$this.paused && !$this.ended) {
+      ctx1.drawImage($this, 0, 0);
+      setTimeout(loop, 1000 / 15); 
+
+      yolo.detect(video, function(err, res) {
+        if(err){
+            console.log(err);
+            return
+            }
+            obj = res;
+        if(obj){
+            rect_draw1();
+            label_draw1();
+        }
+    });
+    }
+  })();
+}, 16);
+
+
+
+function label_draw1(){
+    for (let i = 0; i < obj.length; i++) {
+      ctx1.font = "18px Arial";
+      ctx1.fillStyle = "green";
+      ctx1.fillText(obj[i].label, obj[i].x * canvas1.width + 4, obj[i].y * canvas1.height + 16); 
+    }
+}
+
+function rect_draw1(){
+
+ctx1.fillStyle = "#000000"
+ctx1.fillRect(0,0, 640, 520);
+
+ctx1.drawImage(video, 0, 0);
+    for (let i = 0; i < obj.length; i++) {
+        ctx1.beginPath();
+        ctx1.rect(obj[i].x * canvas1.width, obj[i].y * canvas1.height, obj[i].w * canvas1.width, obj[i].h * canvas1.height);
+        ctx1.strokeStyle = "green";
+        ctx1.stroke();
+        ctx1.closePath();
+    }
+}
+
+   </script>
+
+
+</body>
+</html>
