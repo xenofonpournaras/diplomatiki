@@ -7,5 +7,7 @@ With this web app the user can easily run COCO-SSD and TINY YOLO in the browser 
 
 ## **Supported Modes** ## 
 The supported modes for both models are 4:
--Snapshot detection 
--Video detection 3. Detection od imported image 4. Save of file with the predictions of the models
+*Snapshot detection 
+*Video detection 
+*Detection od imported image 
+*Save of file with the predictions of the models
