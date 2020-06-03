@@ -10,12 +10,13 @@ The supported modes for both models are four:
 1. Snapshot detection 
 2. Video detection 
 3. Detection od imported image 
-4. Save of file with the predictions of the models (for the creation of the blob file "FileSaver.js" is used tha tis derived from https://github.com/eligrey/FileSaver.js/)
+4. Save of file with the predictions of the models (*for the creation of the blob file "FileSaver.js" is used tha tis derived from https://github.com/eligrey/FileSaver.js/*)
 
 ## **Model Characteristics** #
 1. COCO-SSD: The feature extractor of this model is "lite_mobilenet_v2" since it is the smallest model in size that is provided by TensorFlow.js. The reason is that the small size of this model is more suitable for the efficient running of the app in mobile devices.
 
 2. TINY YOLO: The model is provided by ml5.js. The configurations of the model are the following: the IOU threshold is set on 0.4 and the  class propability threshold is set on 0.3.
 
-## ** Functions** ##
+## **Functions** ##
+For laptop or desktop use
 
