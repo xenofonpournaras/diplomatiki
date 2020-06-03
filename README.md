@@ -18,6 +18,6 @@ The supported modes for both models are four:
 2. TINY YOLO: The model is provided by ml5.js. The configurations of the model are the following: the IOU threshold is set on 0.4 and the  class propability threshold is set on 0.3.
 
 ## **Functions** ##
-**laptop or Desktop use:** The ```javascript
-getUserMedia()``` method is used for the 
+**Laptop or Desktop use:** The ```getUserMedia()``` method is used for the camera access
+**Mobile use:** HTML Media Capture is used for the input of video or image files
 
