@@ -19,5 +19,6 @@ The supported modes for both models are four:
 
 ## **Functions** ##
 **Laptop or Desktop use:** The ```getUserMedia()``` method is used for the camera access
+
 **Mobile use:** HTML Media Capture is used for the input of video or image files
 
