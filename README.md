@@ -1,4 +1,6 @@
-# in-browser_object_detection
-Kwdikas diplomatikis
+# In-browser Object Detection
 
-Information
+
+## **Information** ##
+
+Modes
